@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>comment0r management</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+        color: #2c2417;
+        background: radial-gradient(circle at 15% 10%, #fff8ec 0, #f2e7d6 55%, #e8dbc7 100%);
+      }
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 24px 16px 36px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 1.85rem;
+      }
+      p {
+        margin: 0 0 16px;
+        color: #5e543f;
+      }
+      #admin-root {
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>comment0r management</h1>
+      <p>Review comments by thread and soft-delete items when needed.</p>
+      <div id="admin-root"></div>
+    </main>
+
+    <script src="/assets/comment0r-admin.bundle.js"></script>
+    <script>
+      window.Comment0rAdmin.init({
+        apiBaseUrl: window.location.origin,
+        container: "#admin-root"
+      });
+    </script>
+  </body>
+</html>

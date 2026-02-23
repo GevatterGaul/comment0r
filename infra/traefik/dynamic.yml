@@ -1,0 +1,35 @@
+http:
+  routers:
+    comments-api:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/api`)"
+      service: comments-api
+
+    comments-stream:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/events`)"
+      service: comments-stream
+
+    static-web:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/demo`) || PathPrefix(`/manage`) || PathPrefix(`/assets`) || Path(`/`)"
+      service: static-web
+
+  services:
+    comments-api:
+      loadBalancer:
+        servers:
+          - url: "http://comments-api:3001"
+
+    comments-stream:
+      loadBalancer:
+        servers:
+          - url: "http://comments-stream:3002"
+
+    static-web:
+      loadBalancer:
+        servers:
+          - url: "http://static-web:80"

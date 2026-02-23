@@ -1,0 +1,71 @@
+services:
+  traefik:
+    image: traefik:v3.2
+    command:
+      - --providers.file.filename=/etc/traefik/dynamic.yml
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --api.insecure=true
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+    networks:
+      - comment0r
+
+  static-web:
+    build:
+      context: ..
+      dockerfile: static/Dockerfile
+    networks:
+      - comment0r
+
+  comments-api:
+    build:
+      context: ..
+      dockerfile: services/comments-api/Dockerfile
+    environment:
+      - PORT=3001
+      - COUCHDB_URL=http://admin:password@couchdb:5984
+      - COUCHDB_DB=comments
+    depends_on:
+      couchdb:
+        condition: service_healthy
+    networks:
+      - comment0r
+
+  comments-stream:
+    build:
+      context: ..
+      dockerfile: services/comments-stream/Dockerfile
+    environment:
+      - PORT=3002
+      - COUCHDB_URL=http://admin:password@couchdb:5984
+      - COUCHDB_DB=comments
+    depends_on:
+      couchdb:
+        condition: service_healthy
+    networks:
+      - comment0r
+
+  couchdb:
+    image: couchdb:3.4
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=password
+    volumes:
+      - couchdb-data:/opt/couchdb/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5984/_up"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - comment0r
+
+networks:
+  comment0r:
+
+volumes:
+  couchdb-data:

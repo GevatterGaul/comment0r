@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>comment0r demo</title>
+    <style>
+      :root {
+        --bg: #f2ede5;
+        --ink: #251f15;
+        --accent: #2d7f61;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Trebuchet MS", "Gill Sans", sans-serif;
+        color: var(--ink);
+        background: radial-gradient(circle at 10% 10%, #fffaf2 0, var(--bg) 55%, #e8dfd1 100%);
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 24px 16px 40px;
+      }
+      h1 {
+        margin: 0 0 10px;
+        font-size: 1.9rem;
+      }
+      p {
+        margin: 0 0 16px;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 14px;
+      }
+      input,
+      button {
+        font: inherit;
+        border-radius: 10px;
+        border: 1px solid #c7b79d;
+        padding: 10px 12px;
+      }
+      button {
+        cursor: pointer;
+        background: var(--accent);
+        color: #fff;
+        border-color: #21644c;
+      }
+      #meta {
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+        color: #5f563f;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>comment0r demo page</h1>
+      <p>Use this page to test the embeddable bundle end-to-end.</p>
+      <div class="controls">
+        <input id="thread-id" placeholder="thread id" value="test-thread" />
+        <button id="mount-btn" type="button">Mount widget</button>
+      </div>
+      <div id="meta"></div>
+      <div id="comment-root"></div>
+    </main>
+
+    <script src="/assets/comment0r.bundle.js"></script>
+    <script>
+      const threadInput = document.getElementById("thread-id");
+      const mountBtn = document.getElementById("mount-btn");
+      const meta = document.getElementById("meta");
+      const root = document.getElementById("comment-root");
+
+      const params = new URLSearchParams(window.location.search);
+      const fromQuery = params.get("threadId");
+      if (fromQuery) threadInput.value = fromQuery;
+
+      async function mount() {
+        const threadId = threadInput.value.trim() || "test-thread";
+        const apiBaseUrl = window.location.origin;
+        meta.textContent = `apiBaseUrl=${apiBaseUrl} | threadId=${threadId}`;
+        root.innerHTML = "";
+        await window.Comment0r.init({
+          apiBaseUrl,
+          threadId,
+          container: root
+        });
+      }
+
+      mountBtn.addEventListener("click", () => {
+        void mount();
+      });
+
+      void mount();
+    </script>
+  </body>
+</html>
