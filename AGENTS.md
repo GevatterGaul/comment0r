@@ -20,6 +20,8 @@ This file captures implementation conventions for autonomous coding agents worki
 - `packages/management-ui`: embeddable management UI bundle.
 - `packages/shared-types`: shared backend data model types.
 - `static-web` (Nginx): serves `/demo`, `/manage`, and `/assets/*` bundles.
+- `auth-mock`: dev forward-auth service for local login simulation.
+- `oauth2-proxy` (optional profile): provider-hosted OIDC auth.
 - `traefik`: reverse proxy and routing.
 - `couchdb`: persistence.
 
@@ -33,6 +35,10 @@ This file captures implementation conventions for autonomous coding agents worki
 - Do not add anti-spam, auth, or advanced moderation flows unless requested.
 - Keep newest-first ordering as default.
 - Treat both `/demo` and `/manage` as required smoke-test entrypoints.
+- Auth routing policy:
+  - public: thread reads + SSE + `/demo`/assets
+  - authenticated: comment create
+  - admin: `/manage`, soft-delete, restore
 
 ## Code and tooling conventions
 
@@ -43,6 +49,7 @@ This file captures implementation conventions for autonomous coding agents worki
 - Keep widget rendering XSS-safe (escape user content before injecting HTML).
 - Keep management UI rendering XSS-safe as well.
 - Keep Traefik as edge router and Nginx static container for demo/manage/assets.
+- Keep auth enforcement at Traefik forward-auth layer; avoid bypassing edge routes.
 
 ## Verification checklist
 
@@ -56,8 +63,10 @@ Before finalizing major changes, run:
 6. Smoke check:
    - `GET /demo/` loads and widget works
    - `GET /manage/` loads and thread selector populates
+   - login flow works for dev mode (`/auth/login?...`)
    - comment create/list works
    - management soft-delete hides removed comment from list
+   - management restore re-enables removed comments
    - SSE emits `comment.created` for non-deleted comments
 7. `docker compose -f infra/docker-compose.yml down`
 

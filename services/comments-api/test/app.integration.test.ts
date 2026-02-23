@@ -197,7 +197,10 @@ describe("comments-api integration", () => {
     try {
       const response = await app.inject({
         method: "DELETE",
-        url: "/api/threads/test-thread/comments/c-1"
+        url: "/api/threads/test-thread/comments/c-1",
+        headers: {
+          "x-auth-request-role": "admin"
+        }
       });
       expect(response.statusCode).toBe(204);
       expect(db.insert).toHaveBeenCalledOnce();
@@ -235,7 +238,10 @@ describe("comments-api integration", () => {
     try {
       const response = await app.inject({
         method: "POST",
-        url: "/api/threads/test-thread/comments/c-1/restore"
+        url: "/api/threads/test-thread/comments/c-1/restore",
+        headers: {
+          "x-auth-request-role": "admin"
+        }
       });
       expect(response.statusCode).toBe(204);
       expect(db.insert).toHaveBeenCalledOnce();

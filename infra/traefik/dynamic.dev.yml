@@ -1,0 +1,105 @@
+http:
+  middlewares:
+    auth-user:
+      forwardAuth:
+        address: "http://auth-mock:3010/auth/verify/user"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-Auth-Request-User
+          - X-Auth-Request-Email
+          - X-Auth-Request-Role
+
+    auth-admin:
+      forwardAuth:
+        address: "http://auth-mock:3010/auth/verify/admin"
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-Auth-Request-User
+          - X-Auth-Request-Email
+          - X-Auth-Request-Role
+
+  routers:
+    auth-dev:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/auth`)"
+      priority: 300
+      service: auth-mock
+
+    comments-api-admin-delete:
+      entryPoints:
+        - web
+      rule: "Method(`DELETE`) && PathRegexp(`^/api/threads/[^/]+/comments/[^/]+$`)"
+      priority: 260
+      middlewares:
+        - auth-admin
+      service: comments-api
+
+    comments-api-admin-restore:
+      entryPoints:
+        - web
+      rule: "Method(`POST`) && PathRegexp(`^/api/threads/[^/]+/comments/[^/]+/restore$`)"
+      priority: 260
+      middlewares:
+        - auth-admin
+      service: comments-api
+
+    comments-api-post-comment:
+      entryPoints:
+        - web
+      rule: "Method(`POST`) && PathRegexp(`^/api/threads/[^/]+/comments$`)"
+      priority: 250
+      middlewares:
+        - auth-user
+      service: comments-api
+
+    comments-api-public:
+      entryPoints:
+        - web
+      rule: "Method(`GET`) && PathPrefix(`/api/threads`)"
+      priority: 200
+      service: comments-api
+
+    comments-stream:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/events`)"
+      priority: 200
+      service: comments-stream
+
+    manage:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/manage`)"
+      priority: 200
+      middlewares:
+        - auth-admin
+      service: static-web
+
+    static-web:
+      entryPoints:
+        - web
+      rule: "PathPrefix(`/demo`) || PathPrefix(`/assets`) || Path(`/`)"
+      priority: 100
+      service: static-web
+
+  services:
+    comments-api:
+      loadBalancer:
+        servers:
+          - url: "http://comments-api:3001"
+
+    comments-stream:
+      loadBalancer:
+        servers:
+          - url: "http://comments-stream:3002"
+
+    static-web:
+      loadBalancer:
+        servers:
+          - url: "http://static-web:80"
+
+    auth-mock:
+      loadBalancer:
+        servers:
+          - url: "http://auth-mock:3010"

@@ -10,6 +10,25 @@ import {
 } from "../db/comments-repo.js";
 import type { CommentDoc } from "../types.js";
 
+const adminEmailAllowlist = (process.env.ADMIN_EMAIL_ALLOWLIST ?? "")
+  .split(",")
+  .map((value) => value.trim().toLowerCase())
+  .filter((value) => value.length > 0);
+
+function isAdminRequest(request: { headers: Record<string, unknown> }): boolean {
+  const role = request.headers["x-auth-request-role"];
+  if (role === "admin") {
+    return true;
+  }
+
+  const email = request.headers["x-auth-request-email"];
+  if (typeof email === "string" && adminEmailAllowlist.length > 0) {
+    return adminEmailAllowlist.includes(email.toLowerCase());
+  }
+
+  return false;
+}
+
 export function registerCommentRoutes(app: FastifyInstance, db: nano.DocumentScope<CommentDoc>) {
   app.get("/api/threads", async () => {
     const items = await listThreads(db);
@@ -41,16 +60,23 @@ export function registerCommentRoutes(app: FastifyInstance, db: nano.DocumentSco
       return reply.code(400).send({ error: "invalid_body", details: parsedBody.error.flatten() });
     }
 
+    const authenticatedUser = request.headers["x-auth-request-user"];
+    const authorName = parsedBody.data.authorName ?? (typeof authenticatedUser === "string" ? authenticatedUser : undefined);
+
     const created = await createComment(
       db,
       threadId,
       parsedBody.data.body,
-      parsedBody.data.authorName
+      authorName
     );
     return reply.code(201).send(created);
   });
 
   app.delete("/api/threads/:threadId/comments/:commentId", async (request, reply) => {
+    if (!isAdminRequest(request as { headers: Record<string, unknown> })) {
+      return reply.code(403).send({ error: "forbidden" });
+    }
+
     const params = request.params as { threadId: string; commentId: string };
     const result = await softDeleteComment(db, params.threadId, params.commentId);
 
@@ -62,6 +88,10 @@ export function registerCommentRoutes(app: FastifyInstance, db: nano.DocumentSco
   });
 
   app.post("/api/threads/:threadId/comments/:commentId/restore", async (request, reply) => {
+    if (!isAdminRequest(request as { headers: Record<string, unknown> })) {
+      return reply.code(403).send({ error: "forbidden" });
+    }
+
     const params = request.params as { threadId: string; commentId: string };
     const result = await restoreComment(db, params.threadId, params.commentId);
 

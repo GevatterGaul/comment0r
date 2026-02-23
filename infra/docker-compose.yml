@@ -10,7 +10,38 @@ services:
       - "80:80"
       - "8080:8080"
     volumes:
-      - ./traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ${TRAEFIK_DYNAMIC_FILE:-./traefik/dynamic.dev.yml}:/etc/traefik/dynamic.yml:ro
+    networks:
+      - comment0r
+
+  auth-mock:
+    build:
+      context: ..
+      dockerfile: services/auth-mock/Dockerfile
+    environment:
+      - PORT=3010
+      - AUTH_COOKIE_NAME=comment0r_auth
+    networks:
+      - comment0r
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.8.1
+    profiles: ["oidc"]
+    command:
+      - --http-address=0.0.0.0:4180
+      - --provider=oidc
+      - --oidc-issuer-url=${OIDC_ISSUER_URL:-https://example.invalid}
+      - --client-id=${OIDC_CLIENT_ID:-example-client-id}
+      - --client-secret=${OIDC_CLIENT_SECRET:-example-client-secret}
+      - --redirect-url=${OIDC_REDIRECT_URL:-http://localhost/oauth2/callback}
+      - --cookie-secret=${OAUTH2_PROXY_COOKIE_SECRET:-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=}
+      - --cookie-secure=false
+      - --email-domain=*
+      - --set-xauthrequest=true
+      - --pass-authorization-header=false
+      - --pass-access-token=false
+      - --pass-user-headers=true
+      - --upstream=static://202
     networks:
       - comment0r
 
@@ -29,6 +60,7 @@ services:
       - PORT=3001
       - COUCHDB_URL=http://admin:password@couchdb:5984
       - COUCHDB_DB=comments
+      - ADMIN_EMAIL_ALLOWLIST=${ADMIN_EMAIL_ALLOWLIST:-}
     depends_on:
       couchdb:
         condition: service_healthy
